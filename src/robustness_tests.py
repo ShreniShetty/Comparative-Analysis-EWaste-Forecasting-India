@@ -24,4 +24,5 @@ print("PHASE 5: MODEL ROBUSTNESS & RELIABILITY RESULTS")
 print("=" * 80)
 for exp_name, group in df.groupby('experiment'):
     print(f"\n--- {exp_name} ---")
-    print(group[['config', 'train_n', 'test_n', 'MAE_tonnes', 'RMSE_tonnes', 'MAPE_pct']].to_string(index=False))
+    summary = group.drop(columns=['experiment', 'model']).dropna(axis='columns', how='all')
+    print(summary.to_string(index=False))

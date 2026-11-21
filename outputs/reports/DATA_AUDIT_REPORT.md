@@ -87,7 +87,7 @@ The dataset is **not** large enough for unconstrained machine learning, deep neu
 ### 3.3 `RS_Session_266_AU_2384_A.csv`
 - **Dimensions:** 5 rows $\times$ 2 columns.
 - **Temporal Span:** FY 2019–20 to FY 2023–24.
-- **Discrepancy Detected:** Reports FY 2023–24 as $1,751,236\text{ MT}$, whereas the official MoEFCC audited release (PIB PRID: 2147876) reports $1,254,286.55\text{ MT}$ under the 2022 Rules. The PIB audited figure was adopted for consistency with FY 2024–25 ($1,397,955.59\text{ MT}$).
+- **Discrepancy Detected:** Reports FY 2023–24 as $1,751,236\text{ MT}$, whereas the MoEFCC parliamentary reply (PIB PRID: 2147876) reports $1,254,286.55\text{ MT}$ under the 2022 Rules. The PIB figure was adopted for consistency with FY 2024–25 ($1,397,955.59\text{ MT}$).
 
 ---
 
@@ -102,8 +102,8 @@ The dataset is **not** large enough for unconstrained machine learning, deep neu
 | **2020–21** | 1,346,496.31 MT | 1,346,496.31 MT | 1,346,496 MT | **1,346,496.31 MT** | Full consensus (rounding in CSV). |
 | **2021–22** | 1,601,155.36 MT | 1,601,155.36 MT | 1,601,155 MT | **1,601,155.36 MT** | Full consensus (rounding in CSV). |
 | **2022–23** | 1,609,117 MT | `NaN` (Gap) | 1,609,117 MT | **1,609,117.00 MT** | Gap resolved via parliamentary answer. |
-| **2023–24** | Unlisted | 1,254,286.55 MT | 1,751,236 MT | **1,254,286.55 MT** | PIB S02 audited portal figure adopted. |
-| **2024–25** | Unlisted | 1,397,955.59 MT | Unlisted | **1,397,955.59 MT** | PIB S02 audited portal figure adopted. |
+| **2023–24** | Unlisted | 1,254,286.55 MT | 1,751,236 MT | **1,254,286.55 MT** | PIB S02 estimate adopted. |
+| **2024–25** | Unlisted | 1,397,955.59 MT | Unlisted | **1,397,955.59 MT** | PIB S02 estimate adopted. |
 
 ---
 
@@ -115,18 +115,18 @@ A pivotal contribution of this audit is documenting the structural regime change
 2016 Rules Regime (FY 2017-18 to FY 2022-23)         2022 Rules Regime (FY 2023-24 onwards)
 ┌──────────────────────────────────────────────┐     ┌──────────────────────────────────────────────┐
 │ • Scope: 21 notified EEE categories          │     │ • Scope: 106 notified EEE categories         │
-│ • Producer sales + standard lifespan         │ ──► │ • Centralized EPR Portal sales registration  │
+│ • Producer sales + standard lifespan         │ ──► │ • Registered-producer sales + average life   │
 │ • Generation grew: 708k MT to 1,609k MT      │     │ • Generation: 1,254k MT to 1,398k MT         │
 └──────────────────────────────────────────────┘     └──────────────────────────────────────────────┘
                                           ▲
                                           │
                                Methodology Shift
-                           (Not physical reduction)
+                        (Contribution to change unknown)
 ```
 
 1. **2016 Rules:** 21 EEE types. Producer declarations compiled manually across SPCBs.
-2. **2022 Rules (effective April 1, 2023):** 106 EEE types. Required all producers to register and upload sales on the centralized online CPCB EPR portal. Because portal onboarding was progressive, initial reported totals in FY 2023–24 were lower ($1.25\text{ M MT}$ vs $1.61\text{ M MT}$).
-3. **Analytical Treatment:** Models that fail to account for this step-down treat it as negative growth, leading to erroneous downward forecasts. We introduced a binary variable `framework_flag` ($0$ for pre-2023, $1$ for post-2023) to preserve continuity without distorting growth rates.
+2. **2022 Rules (effective April 1, 2023).** CPCB uses registered producers’ sales and equipment lifetimes to estimate generation. Reported generation fell from 1.61 to 1.25 million tonnes across the transition. The published figures do not quantify how much of that fall arose from reporting changes. [MoEFCC parliamentary reply](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2147876)
+3. **Analytical treatment.** A binary `framework_flag` marks years before and after the transition. It allows the linear model to estimate an offset while retaining a common slope.
 
 ---
 

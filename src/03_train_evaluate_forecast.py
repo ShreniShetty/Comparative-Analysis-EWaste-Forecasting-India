@@ -472,16 +472,12 @@ robustness_results = []
 print("\n--- Experiment A: Limited Training Data ---")
 print("Comparing Linear Regression performance with different training windows")
 
-for train_sizes_label, train_end in [('Full (n=6)', 6), ('Short (n=5)', 5), ('Minimal (n=4)', 4)]:
-    X_tr = X_all[:train_end].flatten()
-    y_tr = y_all[:train_end]
-
-    # Test on remaining observations
-    X_te = X_all[train_end:].flatten()
-    y_te = y_all[train_end:]
-
-    if len(y_te) == 0:
-        continue
+# The final two financial years form a common holdout for experiments A–C.
+X_history, X_te = X_all[:-2], X_all[-2:]
+y_history, y_te = y_all[:-2], y_all[-2:]
+for train_sizes_label, train_n in [('Full (n=6)', 6), ('Short (n=5)', 5), ('Minimal (n=4)', 4)]:
+    X_tr = X_history[-train_n:]
+    y_tr = y_history[-train_n:]
 
     lr = LinearRegression()
     lr.fit(X_tr.reshape(-1, 1), y_tr)
@@ -496,7 +492,7 @@ for train_sizes_label, train_end in [('Full (n=6)', 6), ('Short (n=5)', 5), ('Mi
         'experiment': 'A_limited_training',
         'model': 'Linear Regression',
         'config': train_sizes_label,
-        'train_n': train_end,
+        'train_n': train_n,
         'test_n': len(y_te),
         'MAE_tonnes': round(mae, 0),
         'RMSE_tonnes': round(rmse, 0),
@@ -507,16 +503,12 @@ for train_sizes_label, train_end in [('Full (n=6)', 6), ('Short (n=5)', 5), ('Mi
 print("\n--- Experiment B: Missing Observations (Drop-One) ---")
 print("Removing one training observation at a time, training on remainder")
 
-for drop_idx in range(0, 6):
-    # Train on all except observation drop_idx (from first 6), test on last 2
-    mask = np.ones(6, dtype=bool)
+for drop_idx in range(len(y_history)):
+    mask = np.ones(len(y_history), dtype=bool)
     mask[drop_idx] = False
 
-    X_tr = X_all[:6][mask].flatten()
-    y_tr = y_all[:6][mask]
-    X_te = X_all[6:].flatten()
-    y_te = y_all[6:]
-    fw_te = fw_flag[6:]
+    X_tr = X_history[mask]
+    y_tr = y_history[mask]
 
     lr = LinearRegression()
     lr.fit(X_tr.reshape(-1, 1), y_tr)
@@ -543,17 +535,18 @@ print("Adding Gaussian noise to training data, testing on clean holdout")
 
 for noise_pct in [5, 10, 20]:
     maes = []
+    mapes = []
     for trial in range(20):  # 20 random trials
-        np.random.seed(42 + trial)
-        noise = np.random.normal(0, noise_pct / 100, size=6) * y_all[:6]
-        y_noisy = y_all[:6] + noise
+        rng = np.random.RandomState(42 + trial)
+        noise = rng.normal(0, noise_pct / 100, size=len(y_history)) * y_history
+        y_noisy = y_history + noise
 
         lr = LinearRegression()
-        lr.fit(X_all[:6].reshape(-1, 1), y_noisy)
-        preds = lr.predict(X_all[6:].reshape(-1, 1))
+        lr.fit(X_history, y_noisy)
+        preds = lr.predict(X_te)
 
-        mae = mean_absolute_error(y_all[6:], preds)
-        maes.append(mae)
+        maes.append(mean_absolute_error(y_te, preds))
+        mapes.append(calc_mape(y_te, preds))
 
     mean_mae = np.mean(maes)
     std_mae = np.std(maes)
@@ -563,11 +556,12 @@ for noise_pct in [5, 10, 20]:
         'experiment': 'C_noise',
         'model': 'Linear Regression',
         'config': f'{noise_pct}% Gaussian noise',
-        'train_n': 6,
-        'test_n': 2,
-        'MAE_tonnes': round(mean_mae, 0),
-        'RMSE_tonnes': round(std_mae, 0),  # Using this field for std
-        'MAPE_pct': round(calc_mape(y_all[6:], lr.predict(X_all[6:].reshape(-1, 1))), 1),
+        'train_n': len(y_history),
+        'test_n': len(y_te),
+        'trial_count': len(maes),
+        'mean_MAE_tonnes': round(mean_mae, 0),
+        'std_MAE_tonnes': round(std_mae, 0),
+        'mean_MAPE_pct': round(np.mean(mapes), 1),
     })
 
 # --- Experiment D: Forecast Uncertainty (GP) ---
@@ -590,9 +584,8 @@ for i, fy in enumerate(future_fys):
         'config': f'FY {fy}',
         'train_n': 8,
         'test_n': 0,
-        'MAE_tonnes': round(gp_mean[i], 0),
-        'RMSE_tonnes': round(gp_std[i], 0),
-        'MAPE_pct': None,
+        'forecast_mean_tonnes': round(gp_mean[i], 0),
+        'forecast_std_tonnes': round(gp_std[i], 0),
     })
 
 df_robust = pd.DataFrame(robustness_results)
@@ -798,8 +791,8 @@ noise_data = df_robust[df_robust['experiment'] == 'C_noise']
 if len(noise_data) > 0:
     fig, ax = plt.subplots(figsize=(8, 5))
     configs = noise_data['config'].values
-    maes = noise_data['MAE_tonnes'].values
-    stds = noise_data['RMSE_tonnes'].values
+    maes = noise_data['mean_MAE_tonnes'].values
+    stds = noise_data['std_MAE_tonnes'].values
     ax.bar(configs, maes / 1000, yerr=stds / 1000, capsize=5, color='sandybrown', edgecolor='black')
     ax.set_xlabel('Noise Level')
     ax.set_ylabel('MAE (thousand tonnes)')
@@ -839,7 +832,7 @@ if len(ltd_data) > 0:
     ax.bar(ltd_data['config'], ltd_data['MAE_tonnes'] / 1000, color='mediumpurple', edgecolor='black')
     ax.set_xlabel('Training Data Size')
     ax.set_ylabel('MAE (thousand tonnes)')
-    ax.set_title('Robustness: Impact of Training Data Size\n(Linear Regression)')
+    ax.set_title('Linear Regression by Training Window Size\nCommon holdout: FY 2023–24 and FY 2024–25')
     ax.grid(axis='y', alpha=0.3)
     plt.tight_layout()
     plt.savefig(os.path.join(FIGURES_DIR, 'fig6_training_size.png'), dpi=150)

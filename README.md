@@ -13,7 +13,7 @@
 
 ## Executive Summary
 
-This repository hosts the data science and predictive modeling pipeline for forecasting national electronic waste (e-waste) generation in India through 2030. Grounded in Enterprise Information Systems (EIS) principles, this project audits raw institutional records from the Central Pollution Control Board (CPCB) and Ministry of Environment, Forest and Climate Change (MoEFCC), uncovers critical regulatory methodology breaks across statutory regimes, evaluates six distinct forecasting paradigms using chronological rolling-origin backtesting, and delivers decision-support outputs ready for Microsoft Power BI and interactive web inspection.
+This repository hosts the data science and predictive modeling pipeline for forecasting national electronic waste (e-waste) generation in India through 2030. Grounded in Enterprise Information Systems (EIS) principles, this project audits raw institutional records from the Central Pollution Control Board (CPCB) and Ministry of Environment, Forest and Climate Change (MoEFCC), uncovers critical regulatory methodology breaks across statutory regimes, evaluates seven variants from six model families using chronological rolling-origin backtesting, and delivers decision-support outputs ready for Microsoft Power BI and interactive web inspection.
 
 ---
 
@@ -35,23 +35,23 @@ This repository hosts the data science and predictive modeling pipeline for fore
 
 ## Key Research Findings & Contributions
 
-1. **Statutory Structural Break Discovery:** The official historical series contains an apparent discontinuity between FY 2022–23 ($1.61\text{ M MT}$ under the 2016 Rules / 21 EEE categories) and FY 2023–24 ($1.25\text{ M MT}$ under the 2022 Rules / 106 categories on registered-producer portal data). This step-down represents a **regulatory accounting scope change**, not a physical collapse in disposal volumes.
+1. **Statutory Structural Break Discovery:** The official historical series contains an apparent discontinuity between FY 2022–23 ($1.61\text{ M MT}$ under the 2016 Rules / 21 EEE categories) and FY 2023–24 ($1.25\text{ M MT}$ under the 2022 Rules / 106 categories on registered-producer portal data). The framework change limits comparisons of physical volumes across those years. CPCB continued to use producer sales and equipment lifetimes to estimate generation. [MoEFCC parliamentary reply](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2147876)
 2. **Empirical Evaluation Under Data Scarcity ($n=8$):** In chronological backtesting across 4 expanding origins, simpler autoregressive and baseline formulations outperformed complex models:
    - **Naive Baseline:** $\text{MAE} = 190,280\text{ MT}$ ($13.7\%\text{ MAPE}$)
-   - **ARIMA(1,1,0):** $\text{MAE} = 214,388\text{ MT}$ ($15.5\%\text{ MAPE}$) — *Best parameterized model*
-   - **Linear Regression (Framework-Adjusted):** $\text{MAE} = 251,994\text{ MT}$ ($18.7\%\text{ MAPE}$) — *Best for capacity planning*
+   - **ARIMA(1,1,0):** $\text{MAE} = 214,388\text{ MT}$ ($15.5\%\text{ MAPE}$) — *Lowest MAE among fitted models in these four folds*
+   - **Linear Regression (Framework-Adjusted):** $\text{MAE} = 251,994\text{ MT}$ ($18.7\%\text{ MAPE}$) — *Its 21.7% MAE improvement over standard linear regression came entirely from the final fold*
    - **Gaussian Process:** $\text{MAE} = 236,555\text{ MT}$ ($16.8\%\text{ MAPE}$)
    - **Linear Regression (Standard):** $\text{MAE} = 322,003\text{ MT}$ ($23.7\%\text{ MAPE}$)
    - **Random Forest:** $\text{MAE} = 323,631\text{ MT}$ ($21.2\%\text{ MAPE}$)
    - **XGBoost:** $\text{MAE} = 361,350\text{ MT}$ ($23.6\%\text{ MAPE}$)
-3. **Machine Learning Extrapolation Boundary:** Tree ensembles (Random Forest, XGBoost) lack natural extrapolation ability on univariate time indexes, flattening into an unrealistic plateau (~$1.43\text{ M MT}$) beyond 2025. Conversely, Framework-Adjusted Linear Regression projects **$2.67\text{ M MT}$** by FY 2030–31.
-4. **Bayesian Uncertainty Divergence:** Gaussian Process Regression demonstrates that out-of-sample uncertainty increases by over $310\%$ between 1-step-ahead ($2025\text{--}26$) and 6-step-ahead ($2030\text{--}31$), confirming that long-term forecasts under small samples carry wide confidence bounds.
+3. **Machine Learning Extrapolation Boundary:** Tree ensembles (Random Forest, XGBoost) lack natural extrapolation ability on univariate time indexes, producing constant forecasts (~$1.43\text{ M MT}$) beyond 2025. Framework-adjusted linear regression projects **2.67 million tonnes** in FY 2030–31 if its fitted slope and the newer reporting framework persist.
+4. **Bayesian Uncertainty Divergence:** Gaussian process predictive standard deviation rises from 238,196 tonnes in FY 2025–26 to 740,679 tonnes in FY 2030–31, a 210.9% increase. These model-implied bands have untested coverage.
 
 ---
 
 ## Multi-Model Forecasts Through FY 2030–31
 
-| Financial Year | Naive Baseline | Linear Reg (Std) | Linear Reg (FW) | ARIMA(1,1,0) | Random Forest | XGBoost | Gaussian Process | GP 95% Credible Interval |
+| Financial Year | Naive Baseline | Linear Reg (Std) | Linear Reg (FW) | ARIMA(1,1,0) | Random Forest | XGBoost | Gaussian Process | GP nominal 95% prediction interval |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **2025–26** | 1,397,956 MT | 1,710,046 MT | 1,637,304 MT | 1,426,696 MT | 1,424,710 MT | 1,438,663 MT | 1,163,634 MT | $[696,769 \text{ to } 1,630,498]$ |
 | **2026–27** | 1,397,956 MT | 1,820,511 MT | 1,844,759 MT | 1,432,446 MT | 1,424,710 MT | 1,438,663 MT | 952,273 MT | $[320,643 \text{ to } 1,583,903]$ |

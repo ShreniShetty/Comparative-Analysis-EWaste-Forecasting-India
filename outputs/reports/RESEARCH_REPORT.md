@@ -9,9 +9,9 @@
 
 ## Abstract
 
-Accurate forecasting of electronic waste (e-waste) generation is a prerequisite for sizing industrial recycling infrastructure, designing circular-economy reverse logistics, and setting statutory Extended Producer Responsibility (EPR) mandates within Enterprise Information Systems (EIS). In developing economies such as India, predictive modeling faces severe operational challenges characterized by short annual time series, unrecorded informal waste flows, and regulatory structural breaks. This study conducts an end-to-end data audit, statistical modeling, and sensitivity analysis of India's national e-waste generation. Utilizing official institutional records from the Central Pollution Control Board (CPCB) and Ministry of Environment, Forest and Climate Change (MoEFCC) spanning Financial Years (FY) 2017–18 through 2024–25 ($n=8$), we evaluate six predictive models across classical time-series, linear parametric, tree-based ensemble, and Bayesian nonparametric paradigms. 
+This study audits the sources of India’s reported national e-waste generation and compares seven variants from six forecasting families. The series comprises eight annual estimates from FY 2017–18 to FY 2024–25. Six estimates fall under the 2016 Rules and two under the 2022 Rules.
 
-Evaluation is conducted using chronological rolling-origin backtesting across 4 expanding origins. Empirical results reveal that simpler formulations—specifically the Naive Random-Walk ($\text{MAE} = 190,280\text{ MT}$, $\text{MAPE} = 13.7\%$) and ARIMA(1,1,0) ($\text{MAE} = 214,388\text{ MT}$, $\text{MAPE} = 15.5\%$)—demonstrate superior resilience compared to complex gradient-boosted decision trees ($\text{XGBoost: } \text{MAE} = 361,350\text{ MT}$, $\text{MAPE} = 23.6\%$) and Random Forests ($\text{MAE} = 323,631\text{ MT}$, $\text{MAPE} = 21.2\%$). Furthermore, tree ensembles suffer from severe extrapolation failure, producing an artificial plateau (~$1.43\text{ M MT}$) beyond the historical training horizon, whereas a Framework-Adjusted Linear Regression model explicitly captures the transition from the *2016 Rules* to the *2022 Rules* regime, projecting national generation to reach $2,674,580\text{ MT}$ by FY 2030–31. Bayesian Gaussian Process Regression demonstrates that out-of-sample forecast uncertainty expands by over $310\%$ across a 6-year horizon. We conclude with strategic decision-support specifications for enterprise capacity planning and Power BI dashboard deployment.
+Across four one-year-ahead expanding-window forecasts, the naive baseline had the lowest MAE (190,280 tonnes), followed by ARIMA(1,1,0) (214,388 tonnes). Random forest and XGBoost had MAEs of 323,631 and 361,350 tonnes. For FY 2030–31, framework-adjusted linear regression gives 2,674,580 tonnes if the fitted slope and reporting framework persist. The Gaussian process’s predictive standard deviation increases 210.9% between the first and sixth forecast years. These six-year projections have no observed outcomes in the dataset.
 
 ---
 
@@ -48,7 +48,7 @@ The CPCB estimates national e-waste generation for any target financial year $(x
 $$\text{Generation}_{(x-y)} = \text{Sales of EEE in Financial Year } ((x-z) - (y-z))$$
 where $z$ represents the statutory average lifespan assigned to each notified EEE category (e.g., Centralized data processing: 10 years; Personal Computers: 6 years; Cellular Phones: 5 years; Television sets: 9 years).
 
-Under the *E-Waste (Management) Rules, 2016*, tracking was confined to **21 EEE codes**. Under the *E-Waste (Management) Rules, 2022* (effective April 1, 2023), the schedule was expanded to **106 categories**, and calculations were restricted to sales recorded on the centralized CPCB EPR online portal.
+Under the *E-Waste (Management) Rules, 2016*, tracking was confined to **21 EEE codes**. Under the *E-Waste (Management) Rules, 2022* (effective April 1, 2023), the schedule was expanded to **106 categories**, and CPCB estimates use registered producers’ sales and the average lifetime of the notified equipment. [MoEFCC parliamentary reply](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2147876)
 
 ### 2.2 Global E-Waste Monitor (GEM) Methodology Discrepancy
 The United Nations Global E-waste Monitor (GEM 2024; Baldé et al., 2024) estimates India's e-waste generation for calendar year 2022 at **$4,137\text{ Kilotonnes}$ ($4.14\text{ M MT}$)**—nearly $2.6\times$ higher than the CPCB's reported figure of $1.61\text{ M MT}$ for FY 2022–23. This divergence stems from fundamental methodological differences:
@@ -80,7 +80,7 @@ A thorough data audit was performed across all three files supplied in the works
 | :--- | :--- | :--- | :--- |
 | **Erroneous FY 2016–17 Record** | $23,330.3\text{ MT}$ in `E-WASTE INDIA` | Web and parliamentary records confirm $23,330\text{ MT}$ was **e-waste collected/processed**, not generated. | **Excluded** from generation time series to prevent severe downward distortion of trend. |
 | **FY 2022–23 Gap in Master Data** | `NaN` in Master Data row `IN006` | Both `E-WASTE VALUE.xlsx` and `RS_Session_266_AU_2384_A.csv` report $1,609,117\text{ MT}$; verified via MoEFCC parliamentary reply. | **Populated** with $1,609,117.00\text{ MT}$ under 2016 Rules comparability group. |
-| **FY 2023–24 Conflicting Figures** | $1,751,236\text{ MT}$ (RS CSV) vs $1,254,286.55\text{ MT}$ (PIB S02) | RS CSV used older projection framework; PIB release (PRID: 2147876) represents official CPCB audited figures under 2022 Rules. | **Adopted $1,254,286.55\text{ MT}$** from PIB S02 to ensure methodological consistency with FY 2024–25 ($1,397,955.59\text{ MT}$). |
+| **FY 2023–24 Conflicting Figures** | $1,751,236\text{ MT}$ (RS CSV) vs $1,254,286.55\text{ MT}$ (PIB S02) | PIB release 2147876 gives CPCB estimates for both years under the 2022 Rules. The available records do not establish the reason for the discrepancy. | **Adopted $1,254,286.55\text{ MT}$** from PIB S02 to ensure methodological consistency with FY 2024–25 ($1,397,955.59\text{ MT}$). |
 | **Methodology Structural Break** | $-22.05\%$ drop between FY 2022–23 and FY 2023–24 | Transition from 2016 Rules (21 categories) to 2022 Rules (106 categories on EPR portal). | Introduced binary indicator `framework_flag` ($0$ for 2016 Rules, $1$ for 2022 Rules). |
 
 ### 3.3 Final Verified National Historical Series
@@ -99,7 +99,7 @@ $$\begin{array}{lcccc}
 \text{2024--25} & 2024 & 1,397,955.59 & +11.45\% & \text{2022 Rules (EPR Portal)} \\
 \hline
 \end{array}$$
-*\*Note: Negative growth reflects statutory accounting transition, not true volume reduction.*
+*The 22.05% decline spans a change of reporting framework. These estimates alone cannot identify the change in physical generation.*
 
 ---
 
@@ -124,9 +124,9 @@ $$\begin{array}{lccccc}
 \end{array}$$
 
 ### 4.2 Critical Empirical Interpretations
-1. **The Superiority of Simple Baselines:** The Naive model achieved the lowest rolling MAE ($190,280\text{ MT}$) because it carries forward the immediate prior value, allowing it to adapt rapidly to the methodology shift in Fold 7 without suffering from overconfident slope extrapolation.
+1. **One-year benchmark.** Carrying the previous year’s reported generation forward gave the lowest MAE over the four origins. Its largest miss was 354,830 tonnes in FY 2023–24, the first year of the new framework.
 2. **ARIMA's First-Difference Filtering:** ARIMA(1,1,0) achieved the lowest error among parameterized models ($\text{MAE} = 214,388\text{ MT}$, $\text{MAPE} = 15.5\%$), effectively modeling year-on-year velocity changes rather than absolute levels.
-3. **Framework Adjustment Significance:** The Framework-Adjusted Linear Regression ($\text{MAE} = 251,994\text{ MT}$) substantially outperformed standard Linear Regression ($\text{MAE} = 322,003\text{ MT}$), reducing MAE by $21.7\%$ by absorbing the structural step-down of the 2022 Rules.
+3. **Framework indicator.** Adding the framework flag reduced mean absolute error from 322,003 to 251,994 tonnes (21.7%). Both models made identical predictions for the first three test years. In FY 2024–25, after one new-framework observation entered training, absolute error fell from 345,644 to 65,609 tonnes.
 4. **Machine Learning Over-parameterization:** Random Forest ($\text{MAE} = 323,631\text{ MT}$) and XGBoost ($\text{MAE} = 361,350\text{ MT}$) exhibited the worst performance. With only 4 to 7 training points per origin, decision tree partitioning produces coarse step functions that overfit local historical noise.
 
 ---
@@ -146,17 +146,17 @@ $$\begin{array}{lccccc}
 ### 5.1 Experiment A: Training Window Contraction
 Linear Regression was evaluated on the post-break holdout ($2023\text{--}24$ and $2024\text{--}25$) under variable training histories:
 - **Full History ($n=6$, $2017\text{--}2022$):** $\text{MAE} = 686,221\text{ MT}$ ($\text{MAPE} = 51.8\%$)
-- **Short History ($n=5$, $2017\text{--}2021$):** $\text{MAE} = 612,282\text{ MT}$ ($\text{MAPE} = 45.3\%$)
-- **Minimal History ($n=4$, $2017\text{--}2020$):** $\text{MAE} = 408,511\text{ MT}$ ($\text{MAPE} = 30.1\%$)
+- **Five years, FY 2018–19 through FY 2022–23.** MAE was 734,167 tonnes and MAPE was 55.4%.
+- **Four years, FY 2019–20 through FY 2022–23.** MAE was 677,949 tonnes and MAPE was 51.2%.
 
-*Insight:* Fitting a steep linear trend across the entire 2017–2022 trajectory exaggerated future projections when applied across the structural break. Shorter windows yielded smaller post-break errors purely because they captured a less aggressive slope.
+All three windows end in FY 2022–23. The five-year fit had the largest error on the two holdout years, so shortening the history had no consistent effect.
 
 ### 5.2 Experiment B: Jackknife Drop-One Sensitivity
 Systematically omitting individual historical years from the training set ($n=5$) revealed that **FY 2022–23 is the highest-leverage observation**:
 - Omitting FY 2021–22: $\text{MAE} = 605,243\text{ MT}$
-- Omitting FY 2022–23: $\text{MAE} = 824,649\text{ MT}$ ($+36.2\%$ error surge)
+- Omitting FY 2022–23 raised MAE from 686,221 tonnes with all six training years to 824,649 tonnes, an increase of 20.2%.
 
-*Insight:* Because FY 2022–23 exhibited growth deceleration ($+0.5\%$), its presence in the training fold anchors the trend slope; removing it causes the model to project an unsustainable exponential rise.
+FY 2022–23 recorded growth of 0.5%. Omitting it steepened the fitted linear slope and increased overprediction on the two held-out years.
 
 ### 5.3 Experiment C: Noise Sensitivity Perturbation
 Injecting Gaussian noise ($\mathcal{N}(0, \sigma^2)$ with $\sigma \in \{5\%, 10\%, 20\%\}$) over 20 Monte Carlo iterations yielded:
@@ -164,7 +164,7 @@ Injecting Gaussian noise ($\mathcal{N}(0, \sigma^2)$ with $\sigma \in \{5\%, 10\
 - **$10\%$ Noise:** $\text{Mean MAE} = 696,742 \pm 188,974\text{ MT}$
 - **$20\%$ Noise:** $\text{Mean MAE} = 730,063 \pm 331,776\text{ MT}$
 
-*Insight:* While mean MAE remains relatively stable under moderate noise ($\le 10\%$), error variance expands dramatically at $20\%$ noise, indicating high parameter volatility under severe measurement errors.
+The ± values give the population standard deviation of trial MAE. Mean MAPE across the 20 trials was 52.2%, 52.5% and 55.0% at the three successive noise levels.
 
 ### 5.4 Experiment D: Gaussian Process Forecast Uncertainty
 Gaussian Process Regression explicitly quantifies out-of-sample predictive uncertainty across the future horizon:
@@ -172,7 +172,7 @@ Gaussian Process Regression explicitly quantifies out-of-sample predictive uncer
 - **FY 2027–28 (3-Step Ahead):** $\text{Forecast} = 734,458\text{ MT}$, $\sigma = 427,747\text{ MT}$, $95\%\text{ CI: } [-103,927 \text{ to } 1,572,842\text{ MT}]$
 - **FY 2030–31 (6-Step Ahead):** $\text{Forecast} = 229,283\text{ MT}$, $\sigma = 740,679\text{ MT}$, $95\%\text{ CI: } [-1,222,447 \text{ to } 1,681,013\text{ MT}]$
 
-*Insight:* Predictive variance expands by **$310.9\%$** by 2030. The lower credible interval breaches zero by 2027, demonstrating that long-horizon unconstrained kernel regression on tiny samples reverts to the prior mean with extreme variance.
+Between the first and sixth forecast years, predictive standard deviation rose 210.9%. The corresponding nominal 95% interval half-width rose from 466,864 to 1,451,730 tonnes. The lower bound is already negative in FY 2027–28. Physical generation is nonnegative, and interval coverage has not been tested.
 
 ---
 
@@ -203,33 +203,32 @@ Naive Baseline   ████████████████████   
 ```
 
 ### The Extrapolation Boundary Breakdown
-1. **The Machine Learning Plateau Phenomenon:** Both Random Forest ($1,424,710\text{ MT}$) and XGBoost ($1,438,663\text{ MT}$) remain completely stagnant from 2026 to 2030. Decision trees assign any future ordinal time index ($t > 8$) to the rightmost leaf node established during training, effectively freezing predictions at the last observed level. **Tree models are fundamentally invalid for univariate time-series extrapolation.**
+1. **The Machine Learning Plateau Phenomenon:** Both Random Forest ($1,424,710\text{ MT}$) and XGBoost ($1,438,663\text{ MT}$) remain completely stagnant from 2026 to 2030. Decision trees assign any future ordinal time index ($t > 8$) to the same terminal leaves when the framework indicator also stays fixed. The two fitted ensembles therefore return their respective constant levels at all six horizons.
 2. **ARIMA's Stationary Mean Reversion:** ARIMA(1,1,0) projects an asymptotic flattening to $1.434\text{ M MT}$ because its autoregressive coefficient on the differenced series ($\phi_1 < 1$) decays rapidly toward zero in multi-step forecasting.
-3. **The Recommended Operational Forecast:** **Linear Regression (Framework-Adjusted)** is the most defensible parametric model for capacity sizing. By assuming that the post-2023 regulatory scope continues under sustained electronic consumption growth, it projects India's formal e-waste generation to reach **$2.67\text{ Million MT}$ by FY 2030–31**.
+3. **Conditional growth scenario.** Framework-adjusted linear regression projects 2.67 million tonnes by FY 2030–31 under a common linear time trend and continued 2022 Rules reporting. Only two years under those rules are available to estimate the level offset.
 
 ---
 
 ## 7. Enterprise Information Systems (EIS) Decision Support
 
 ```
-       Statutory Formal Collection Requirements (2030 Planning Horizon)
+       Illustrative collection scenario for FY 2030–31
                       Total Generation: 2,674,580 MT
                                     │
             ┌───────────────────────┴───────────────────────┐
             ▼                                               ▼
-   Formal EPR Obligation                           Informal / Loss Flow
-       (80% Mandate)                                   (20% Residual)
+    Selected collection share                      Remaining share
+             (80%)                                      (20%)
        2,139,664 MT                                      534,916 MT
-   [Requires Formal Processing]                   [Environmental Risk Exposure]
 ```
 
 ### 7.1 Industrial Capacity Planning
-Under the MoEFCC mandate, formal EPR collection targets scale to **$80\%$** by FY 2027–28. Based on the Framework-Adjusted projection ($2.67\text{ M MT}$ in 2030):
-- **Mandatory Formal Collection Capacity:** $2,139,664\text{ MT}$ ($2.14\text{ M MT}$) must be formally collected, dismantled, and channeled to authorized recyclers.
+Applying an illustrative 80% collection share to the framework-adjusted projection gives the following planning scenario.
+- **Illustrative collection volume.** At that share, 2,139,664 tonnes would enter formal collection. Compliance assessment would require producer-specific obligation data.
 - **Current Infrastructure Gap:** While nominal authorized capacity across India exceeds $2\text{ M MT}$, operational processing is heavily concentrated in four states (Maharashtra, Gujarat, Tamil Nadu, and Haryana). Enterprise logistics systems must prioritize **secondary aggregation hubs in Tier-2 and Tier-3 urban centres** to bridge the spatial collection gap.
 
 ### 7.2 Enterprise Decision Rules
-1. **Rule 1 (CapEx Sizing):** Base 5-year facility capital planning on the Linear Regression (FW) scenario ($2.67\text{ M MT}$), treating ARIMA ($1.43\text{ M MT}$) as the lower-bound volume risk scenario.
+1. **Capacity sizing.** Compare a 1.43 million-tonne ARIMA scenario with a 2.67 million-tonne framework-adjusted linear scenario before committing to capacity. Both extrapolate beyond the one-year evaluation horizon.
 2. **Rule 2 (Regulatory Reconciliation):** Never mix CPCB figures directly with Global E-waste Monitor benchmarks ($>4\text{ M MT}$) in corporate compliance reporting. CPCB tracks statutory EPR producer declarations, whereas GEM models total physical waste.
 3. **Rule 3 (Model Deprecation):** Do not deploy Random Forest or XGBoost models in production ERP/EIS modules for multi-year forecasting unless external macroeconomic drivers (GDP, smartphone shipments, urbanization rate) are integrated as exogenous regressors.
 
@@ -246,7 +245,7 @@ Under the MoEFCC mandate, formal EPR collection targets scale to **$80\%$** by F
 
 ## 9. Conclusion
 
-This project demonstrates the critical importance of rigorous data auditing before applying predictive analytics. By uncovering the structural break between the 2016 and 2022 CPCB regulatory regimes and eliminating non-generation data artifacts, we established an empirically validated baseline for Indian e-waste forecasting. In small-sample, regime-shifting environments, complex machine learning ensembles fail to extrapolate, while simpler, theory-grounded parametric and autoregressive models deliver superior accuracy and operational reliability. The Framework-Adjusted Linear Regression model projects national generation to reach $2.67\text{ Million MT}$ by FY 2030–31, establishing clear benchmarks for India's circular economy infrastructure planning.
+For these eight annual estimates, the naive baseline had the lowest one-year-ahead MAE. All of the framework indicator’s measured improvement over standard linear regression came from the last of four test years. The FY 2030–31 projections span different assumptions about trend and the reporting framework. Their spread can inform capacity scenarios while more post-transition observations accumulate.
 
 ---
 

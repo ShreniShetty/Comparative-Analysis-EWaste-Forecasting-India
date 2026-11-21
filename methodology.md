@@ -30,9 +30,9 @@ where:
 ### 2.2 The Regulatory Structural Break
 A critical finding of our data audit is that the CPCB historical series is **not continuous**:
 1. **The 2016 Rules Era (FY 2017–18 through FY 2022–23):** E-waste generation was estimated across **21 notified EEE item categories** under the *E-Waste (Management) Rules, 2016*. Generation grew from $708,445\text{ MT}$ to $1,609,117\text{ MT}$.
-2. **The 2022 Rules Era (Effective April 1, 2023 / FY 2023–24 onwards):** The *E-Waste (Management) Rules, 2022* superseded the 2016 Rules, dramatically expanding the statutory schedule to **106 EEE product categories** while restricting estimation strictly to sales reported by registered producers on the centralized online EPR Portal. Consequently, the reported generation for FY 2023–24 dropped to $1,254,286.55\text{ MT}$ before rising to $1,397,955.59\text{ MT}$ in FY 2024–25.
+2. **The 2022 Rules Era (Effective April 1, 2023 / FY 2023–24 onwards):** The *E-Waste (Management) Rules, 2022* superseded the 2016 Rules, dramatically expanding the statutory schedule to **106 EEE product categories** while restricting estimation strictly to sales reported by registered producers on the centralized online EPR Portal. The reported generation for FY 2023–24 dropped to $1,254,286.55\text{ MT}$ before rising to $1,397,955.59\text{ MT}$ in FY 2024–25.
 
-> **Data Quality Rule:** This drop of $-22.05\%$ between FY 2022–23 and FY 2023–24 does not reflect a physical collapse in electronic equipment disposal; rather, it reflects a **measurement and reporting methodology break**. Merging these regimes without an indicator variable introduces artificial volatility into time-series models.
+> Reported generation fell 22.05% across the transition. The records cannot isolate changes in physical generation from changes in reporting. CPCB uses registered producers’ sales and average equipment lifetimes under the 2022 Rules. [MoEFCC parliamentary reply](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2147876)
 
 ### 2.3 Exclusion of Erroneous & Non-Generation Records
 - **2016–17 Record ($23,330.3\text{ MT}$):** Found in `E-WASTE VALUE.xlsx`. Cross-validation with PIB and Lok Sabha records proves this represents **formally collected/processed e-waste**, not generated e-waste. It was excluded from the generation modeling pipeline.
@@ -104,7 +104,7 @@ Because standard $k$-fold cross-validation and random train/test splits destroy 
 ## 5. Robustness & Stability Stress-Testing Framework
 
 To address the core research objective under limited data, four controlled experiments were conducted:
-- **Experiment A (Sample Size Sensitivity):** Evaluates performance when training history is truncated from $n=6$ to $n=5$ and $n=4$.
+- **Experiment A (Sample Size Sensitivity):** Fits the most recent six, five or four years ending in FY 2022–23. Each fit predicts the same FY 2023–24 and FY 2024–25 holdout without updating between forecasts.
 - **Experiment B (Jackknife / Drop-One Resilience):** Systematically removes one historical observation from the training fold to identify high-leverage data points.
-- **Experiment C (Measurement Noise Injection):** Injects zero-mean Gaussian perturbations ($\sigma \in \{5\%, 10\%, 20\%\}$) over 20 Monte Carlo iterations.
-- **Experiment D (Uncertainty Quantification):** Analyzes the variance expansion of the Gaussian Process predictive distribution over a 6-year forecast horizon.
+- **Experiment C (Measurement Noise Injection):** Injects zero-mean Gaussian perturbations ($\sigma \in \{5\%, 10\%, 20\%\}$) to each training value relative to its magnitude. At each level we report the mean MAE, population standard deviation of MAE and mean MAPE across 20 trials on the same clean holdout.
+- **Experiment D (Uncertainty Quantification):** Tracks the mean and standard deviation of the fitted Gaussian process predictive distribution over a 6-year forecast horizon.

@@ -12,7 +12,7 @@ This guide details the complete configuration required to reproduce the decision
 
 ### 1.1 Data Files Manifest
 1. `historical_data.csv`: Verified annual national e-waste generation figures (FY 2017–18 to FY 2024–25), reporting frameworks, and metadata.
-2. `forecast_results.csv`: Future multi-model forecasts (FY 2025–26 to FY 2030–31) across 6 models, alongside historical benchmarks and uncertainty bounds.
+2. `forecast_results.csv`: Future multi-model forecasts (FY 2025–26 to FY 2030–31) across seven model variants, alongside historical benchmarks and uncertainty bounds.
 3. `model_metrics.csv`: Comparative evaluation metrics (MAE, RMSE, MAPE, sMAPE) from rolling-origin backtesting.
 4. `model_predictions.csv`: Detailed fold-by-fold predictions and residuals during chronological evaluation.
 5. `model_robustness_results.csv`: Sensitivity test results (training data contraction, missing observation drop-one tests, Gaussian noise perturbation, and Gaussian Process uncertainty).
@@ -151,22 +151,22 @@ RETURN HighVal - LowVal
   2. **Clustered Bar Chart:** RMSE (Tonnes) by Model.
   3. **Clustered Bar Chart:** MAPE (%) and sMAPE (%) by Model.
   4. **Scatter Plot:** Prediction Residuals (Actual vs. Predicted across rolling-origin folds).
-  5. **Summary Card:** Best overall empirical performer on rolling-origin backtesting: `Naive Baseline` (13.7% MAPE) / `ARIMA(1,1,0)` (15.5% MAPE) due to the sharp regulatory break.
+  5. **Summary card.** Across four one-year forecasts, the naive baseline had the lowest MAE (190,280 tonnes), followed by ARIMA (214,388 tonnes).
 
 ### Page 4 — Model Reliability & Robustness
 - **Header:** Stress Testing Under Data Scarcity & Perturbation
 - **Visuals:**
   1. **Clustered Column Chart (Experiment A):** Training History Sensitivity (n=4 vs n=5 vs n=6).
   2. **Waterfall / Deviation Chart (Experiment B):** Impact of dropping single historical observations (Jackknife/Leave-One-Out).
-  3. **Error Bar Chart (Experiment C):** Gaussian Noise Injection (5%, 10%, 20% noise variance over 20 Monte Carlo iterations).
-  4. **Line Chart (Experiment D):** Standard deviation expansion of Gaussian Process across forecast horizons.
+  3. **Error bars for Experiment C.** Plot `mean_MAE_tonnes` with ±`std_MAE_tonnes` across 20 trials per noise level. `mean_MAPE_pct` is the mean percentage error over those trials. Each training value has Gaussian noise with a standard deviation of 5%, 10% or 20% of its magnitude.
+  4. **Line chart for Experiment D.** Plot `forecast_std_tonnes` by financial year. Use `forecast_mean_tonnes` for the point forecast. These quantities describe future predictions and carry no observed forecast errors.
 
 ### Page 5 — Planning Insights & EIS Decision Support
 - **Header:** Strategic Infrastructure Sizing & Enterprise Implications
 - **Visuals:**
   1. **Recycling Capacity Gap Gauge:** Comparing forecasted 2030 generation (2.67 Mt under Linear FW) against current authorized formal dismantling/recycling capacity.
-  2. **Scenario Matrix:** Low (ARIMA: 1.43 Mt), Moderate (LinReg: 2.26 Mt), High (LinReg FW: 2.67 Mt), International Benchmark (NITI/GEM: >10 Mt).
-  3. **EPR Target Compliance Calculator:** Formal collection requirements based on MoEFCC targets (80% by 2027–28 onwards).
+  2. **Scenario Matrix:** Low (ARIMA: 1.43 Mt), Moderate (LinReg: 2.26 Mt), High (LinReg FW: 2.67 Mt), External calendar-year projection (NITI Aayog: 14 Mt, different scope).
+  3. **Collection scenario calculator.** Multiply a selected model forecast by a user-chosen share of national generation to estimate an illustrative collection volume.
   4. **Executive Caveat Panel:** Explicit disclaimer on small-sample constraints, lack of granular state-level generation panels, and the risks of long-range extrapolation.
 
 ---

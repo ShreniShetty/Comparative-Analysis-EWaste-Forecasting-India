@@ -105,19 +105,20 @@ EIS/
 1. **Official Data Discrepancies Resolved:**
    - **FY 2016–17 (23,330 MT):** Identified as dismantled/recycled volume under initial pilot rules, not national generation. Dropped to avoid severe positive skew.
    - **Solid Waste Misclassification:** State-level "TPD" (Tonnes Per Day) records in preliminary workbooks were verified as Municipal Solid Waste (MSW), not electronic waste. State panel models were appropriately rejected to prevent empirical contamination.
-   - **Regulatory Regime Shift (2016 vs 2022 Rules):** CPCB transitioned from a sales-lifespan calculation method to an end-of-life EPR verification method. This produced an apparent paper contraction in FY 2023–24 ($1,254,286$ MT) before rebounding in FY 2024–25 ($1,433,000$ MT).
-   - **Feature Engineering:** A binary `framework_flag` (0 for FY 2017–18 to 2022–23; 1 for FY 2023–24 onwards) was implemented, reducing linear regression forecast error by 21.7%.
+   - **Regulatory Regime Shift (2016 vs 2022 Rules):** The 2022 Rules took effect in FY 2023–24. CPCB uses registered producers’ sales and average equipment lifetimes to estimate generation. It reported 1,254,286.55 tonnes in FY 2023–24 and 1,397,955.59 tonnes in FY 2024–25. The share of the earlier decline attributable to reporting changes is unknown. [MoEFCC parliamentary reply](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2147876)
+   - **Feature Engineering:** A binary `framework_flag` (0 for FY 2017–18 to 2022–23; 1 for FY 2023–24 onwards) was implemented, reducing four-fold mean absolute error by 21.7%. The two linear models differed only in the final fold, after the first new-framework year entered training.
 
 2. **Model Performance Summary (Rolling-Origin Backtesting, 4 Folds):**
    - **Naive Baseline:** MAE = 190,280 MT | MAPE = 13.7% (Strong near-term benchmark)
    - **ARIMA(1,1,0):** MAE = 214,388 MT | MAPE = 15.5% (Best balanced dynamic model)
-   - **Gaussian Process Regression:** MAE = 236,555 MT | MAPE = 16.8% (Provides calibrated uncertainty)
-   - **Linear Regression (Framework-Aware):** MAE = 251,994 MT | MAPE = 18.7% (Recommended for 2030 policy baseline: projected $2,674,580$ MT by FY 2030–31)
-   - **Random Forest & XGBoost:** MAE > 330,000 MT | MAPE > 24% (Severe small-sample failure; cannot extrapolate monotonic trends and plateaued artificially at $1.43$M MT).
+   - **Gaussian Process Regression:** MAE = 236,555 MT | MAPE = 16.8% (Model-implied predictive intervals, with untested coverage)
+   - **Linear Regression (Framework-Aware):** MAE = 251,994 MT | MAPE = 18.7% (Conditional FY 2030–31 scenario of 2,674,580 tonnes if the fitted trend and reporting framework persist)
+   - **Random Forest:** MAE = 323,631 MT | MAPE = 21.2%.
+   - **XGBoost:** MAE = 361,350 MT | MAPE = 23.6%. Both fitted tree models return constant future values around 1.43 million tonnes.
 
 3. **Key Robustness Discoveries:**
-   - **Jackknife Sensitivity:** FY 2022–23 is the single highest-leverage observation (+36.2% error change if omitted).
-   - **Epistemic Uncertainty:** Under Gaussian Process simulation, 95% predictive intervals expand from $\pm 312,000$ MT in FY 2025–26 to $\pm 1,283,000$ MT in FY 2030–31 (+310.9% uncertainty expansion).
+   - **Jackknife Sensitivity:** FY 2022–23 is the single highest-leverage observation (MAE rises 20.2%, from 686,221 to 824,649 tonnes, if omitted).
+   - **Epistemic Uncertainty:** The fitted Gaussian process gives nominal 95% interval half-widths of 466,864 tonnes in FY 2025–26 and 1,451,730 tonnes in FY 2030–31, a 210.9% increase.
 
 ---
 

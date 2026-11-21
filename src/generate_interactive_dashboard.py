@@ -14,6 +14,7 @@ Pages:
 
 import os
 import json
+from urllib.parse import quote
 import pandas as pd
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -28,6 +29,16 @@ df_preds = pd.read_csv(os.path.join(PBI_DIR, 'model_predictions.csv'))
 df_robust = pd.read_csv(os.path.join(PBI_DIR, 'model_robustness_results.csv'))
 df_quality = pd.read_csv(os.path.join(PBI_DIR, 'data_quality_report.csv'))
 df_sources = pd.read_csv(os.path.join(PBI_DIR, 'source_register.csv'))
+source_links = {
+    'S01': 'https://www.pib.gov.in/PressReleasePage.aspx?PRID=1943201',
+    'S_RS': 'https://sansad.in/getFile/annex/266/AU2384_9gmDUV.pdf?source=pqars',
+    'S02': 'https://www.pib.gov.in/PressReleasePage.aspx?PRID=2147876',
+}
+dataset = df_hist.copy()
+dataset['source_url'] = [source_links[s.split(' + ')[0]] for s in dataset.source_id]
+dataset_download = quote(dataset.to_csv(index=False), safe='')
+df_hist['source_url'] = dataset.source_url
+df_hist['yoy_growth_pct'] = df_hist.ewaste_generated_tonnes.pct_change().mul(100)
 
 # Prepare JSON blobs
 hist_json = df_hist.to_dict(orient='records')
@@ -173,6 +184,8 @@ html_content = f"""<!DOCTYPE html>
         <div class="col-lg-4">
           <div class="card p-4">
             <h5 class="fw-bold mb-3"><i class="bi bi-database-check me-2"></i>Verified Historical Records</h5>
+            <p class="small">CPCB estimates annual national generation from producer sales and equipment lifespans. Open a year’s source to verify the figure.</p>
+            <a download="india-ewaste-training-data.csv" href="data:text/csv;charset=utf-8,{dataset_download}">Download training data with source links</a>
             <div class="table-responsive">
               <table class="table table-sm table-hover" id="overviewTable">
                 <thead class="table-light">
@@ -181,13 +194,14 @@ html_content = f"""<!DOCTYPE html>
                     <th>Tonnes (MT)</th>
                     <th>YoY</th>
                     <th>Framework</th>
+                    <th>Source</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
               </table>
             </div>
             <div class="disclaimer-box mt-2">
-              <strong>Methodology Break Note:</strong> The drop from FY 2022–23 (1.61M MT) to FY 2023–24 (1.25M MT) reflects a transition to registered producer sales under the 2022 Rules, not a true consumption collapse.
+              <strong>Methodology Break Note:</strong> Reported generation fell 22.05% as the rules changed. The two estimates alone cannot establish how much physical generation changed.
             </div>
           </div>
         </div>
@@ -245,7 +259,7 @@ html_content = f"""<!DOCTYPE html>
               </table>
             </div>
             <div class="alert alert-info py-2 px-3 small mt-2 mb-0">
-              <i class="bi bi-info-circle-fill me-1"></i> <strong>Critical Model Caveat:</strong> Tree ensembles (RF, XGBoost) lack natural extrapolation ability on small univariate time indices, causing them to plateau at the last training level (~1.43M MT). Linear Regression (FW) explicitly adjusts for the framework shift, extrapolating to 2.67M MT by 2030.
+              <i class="bi bi-info-circle-fill me-1"></i> <strong>Critical Model Caveat:</strong> Tree ensembles (RF, XGBoost) lack natural extrapolation ability on small univariate time indices, and return constant values around 1.43M MT across all six future years. Linear Regression (FW) explicitly adjusts for the framework shift, projecting 2.67M MT in FY 2030–31 if the fitted trend and current reporting framework continue.
             </div>
           </div>
         </div>
@@ -254,12 +268,13 @@ html_content = f"""<!DOCTYPE html>
 
     <!-- PAGE 3: MODEL PERFORMANCE -->
     <div class="tab-pane fade" id="performance" role="tabpanel">
+      <p class="mb-3">Each model makes four one-year forecasts. Train on the first four years and predict FY 2021–22, then add the observed year and repeat through FY 2024–25. MAE is the average absolute miss in tonnes. MAPE expresses the average miss as a percentage of observed generation.</p>
       <div class="row g-3 mb-4">
         <div class="col-md-3">
           <div class="card p-3 kpi-card" style="border-left-color: #198754;">
             <div class="kpi-title">Lowest Rolling MAE</div>
             <div class="kpi-value text-success">190,280 MT</div>
-            <div class="kpi-subtext">Naive Baseline (Walk-forward fold)</div>
+            <div class="kpi-subtext">Naive Baseline (four forecasts)</div>
           </div>
         </div>
         <div class="col-md-3">
@@ -336,12 +351,12 @@ html_content = f"""<!DOCTYPE html>
         <div class="col-lg-6">
           <div class="card p-4">
             <h5 class="fw-bold mb-2"><i class="bi bi-slash-circle me-2"></i>Exp A: Sensitivity to Training History Size</h5>
-            <p class="text-muted small">Evaluating Linear Regression holdout error under truncated historical windows.</p>
+            <p class="text-muted small">All windows end in FY 2022–23 and predict FY 2023–24 and FY 2024–25.</p>
             <div class="chart-container">
               <canvas id="expAChart"></canvas>
             </div>
             <div class="small text-muted mt-2">
-              <strong>Observation:</strong> Training on fewer points before the structural break produces smaller post-break errors purely because older growth was steep and extrapolated even higher.
+              <strong>Observation:</strong> The five-year window had the largest error. Shortening the training window had no consistent effect on these two forecasts.
             </div>
           </div>
         </div>
@@ -353,7 +368,7 @@ html_content = f"""<!DOCTYPE html>
               <canvas id="expCChart"></canvas>
             </div>
             <div class="small text-muted mt-2">
-              <strong>Observation:</strong> Linear regression remains structurally stable under mild noise (5%–10%), but variance spikes sharply at 20% perturbation.
+              <strong>Observation:</strong> Across the 20 trials, mean MAPE rose from 52.2% at 5% noise to 55.0% at 20% noise.
             </div>
           </div>
         </div>
@@ -372,7 +387,7 @@ html_content = f"""<!DOCTYPE html>
         <div class="col-lg-6">
           <div class="card p-4">
             <h5 class="fw-bold mb-2"><i class="bi bi-cone-striped me-2"></i>Exp D: Gaussian Process Forecast Uncertainty</h5>
-            <p class="text-muted small">95% Bayesian credible interval expansion across the forecast horizon.</p>
+            <p class="text-muted small">Model-implied predictive standard deviation at each forecast horizon.</p>
             <div class="chart-container">
               <canvas id="expDChart"></canvas>
             </div>
@@ -383,10 +398,11 @@ html_content = f"""<!DOCTYPE html>
 
     <!-- PAGE 5: PLANNING INSIGHTS -->
     <div class="tab-pane fade" id="planning" role="tabpanel">
+      <p class="mb-3">Enterprise decision support: an analyst reconciles official releases into a shared dataset. Operations can use a collection scenario to estimate workload, and finance can apply its cost per tonne to the same volume. The calculator below uses a national scenario. An individual recycler would also need its own expected share and capacity data.</p>
       <div class="row g-3 mb-4">
         <div class="col-lg-8">
           <div class="card p-4">
-            <h5 class="fw-bold mb-3"><i class="bi bi-recycle me-2"></i>EIS Infrastructure & Recycling Capacity Gap (2030 Target)</h5>
+            <h5 class="fw-bold mb-3"><i class="bi bi-recycle me-2"></i>Projected generation under alternative scenarios</h5>
             <div class="chart-container">
               <canvas id="planningChart"></canvas>
             </div>
@@ -396,12 +412,12 @@ html_content = f"""<!DOCTYPE html>
           <div class="card p-4">
             <h5 class="fw-bold mb-3"><i class="bi bi-sliders me-2"></i>Interactive Target Calculator</h5>
             <div class="mb-3">
-              <label class="form-label small fw-bold">EPR Formal Collection Target (2030):</label>
+              <label class="form-label small fw-bold">Assumed formal collection share (2030)</label>
               <div class="input-group input-group-sm">
                 <input type="number" class="form-control" id="eprTargetRate" value="80" min="40" max="100">
                 <span class="input-group-text">%</span>
               </div>
-              <div class="form-text small">MoEFCC mandated target is 80% from 2027–28 onwards.</div>
+              <div class="form-text small">Choose a share of projected national generation for capacity planning.</div>
             </div>
             <div class="mb-3">
               <label class="form-label small fw-bold">Select Forecast Scenario:</label>
@@ -409,17 +425,17 @@ html_content = f"""<!DOCTYPE html>
                 <option value="2674580">Linear Regression FW (2,674,580 MT)</option>
                 <option value="2262371">Linear Regression Standard (2,262,371 MT)</option>
                 <option value="1433882">ARIMA Conservative (1,433,882 MT)</option>
-                <option value="6190000">NITI Aayog Benchmark (6,190,000 MT)</option>
+                <option value="14000000">NITI Aayog 2030 projection (14,000,000 MT, different scope)</option>
               </select>
             </div>
             <hr>
             <div class="p-3 bg-light rounded">
               <div class="d-flex justify-content-between mb-2">
-                <span class="small text-muted">Required Formal Collection:</span>
+                <span class="small text-muted">Illustrative collection volume</span>
                 <strong id="calcCollectionVal" class="text-primary">2,139,664 MT</strong>
               </div>
               <div class="d-flex justify-content-between">
-                <span class="small text-muted">Uncollected / Informal Flow:</span>
+                <span class="small text-muted">Volume outside scenario share</span>
                 <strong id="calcUncollectedVal" class="text-danger">534,916 MT</strong>
               </div>
             </div>
@@ -471,13 +487,14 @@ const robustData = {json.dumps(robust_json)};
 const ovTable = document.querySelector('#overviewTable tbody');
 histData.forEach((row, i) => {{
   const tr = document.createElement('tr');
-  const yoyStr = row.yoy_growth_pct ? (row.yoy_growth_pct > 0 ? '+' : '') + row.yoy_growth_pct.toFixed(1) + '%' : '—';
+  const yoyStr = Number.isFinite(row.yoy_growth_pct) ? (row.yoy_growth_pct > 0 ? '+' : '') + row.yoy_growth_pct.toFixed(1) + '%' : '—';
   const badgeCls = row.reporting_framework === '2022 Rules' ? 'badge-fw2' : 'badge-fw1';
   tr.innerHTML = `
     <td><strong>${{row.financial_year}}</strong></td>
     <td>${{Number(row.ewaste_generated_tonnes).toLocaleString()}}</td>
     <td><span class="${{row.yoy_growth_pct < 0 ? 'text-danger' : 'text-success'}}">${{yoyStr}}</span></td>
     <td><span class="badge ${{badgeCls}}">${{row.reporting_framework}}</span></td>
+    <td><a href="${{row.source_url}}" target="_blank" rel="noopener">Official record</a></td>
   `;
   ovTable.appendChild(tr);
 }});
@@ -747,7 +764,7 @@ new Chart(document.getElementById('expCChart'), {{
     labels: expC.map(d => d.config),
     datasets: [{{
       label: 'Mean MAE (Tonnes)',
-      data: expC.map(d => d.MAE_tonnes),
+      data: expC.map(d => d.mean_MAE_tonnes),
       backgroundColor: '#fd7e14',
       borderRadius: 5
     }}]
@@ -777,7 +794,7 @@ new Chart(document.getElementById('expDChart'), {{
     labels: expD.map(d => d.config.replace('FY ', '')),
     datasets: [{{
       label: 'GP Predictive Std (Tonnes)',
-      data: expD.map(d => d.RMSE_tonnes),
+      data: expD.map(d => d.forecast_std_tonnes),
       borderColor: '#dc3545',
       backgroundColor: 'rgba(220,53,69,0.1)',
       fill: true,
@@ -791,7 +808,7 @@ new Chart(document.getElementById('expDChart'), {{
 new Chart(document.getElementById('planningChart'), {{
   type: 'bar',
   data: {{
-    labels: ['2024-25 Baseline', '2030 (ARIMA)', '2030 (LinReg Std)', '2030 (LinReg FW)', '2030 (NITI Projection)'],
+    labels: ['2024-25 Baseline', '2030 (ARIMA)', '2030 (LinReg Std)', '2030 (LinReg FW)', '2030 (NITI, different scope)'],
     datasets: [{{
       label: 'E-Waste Quantity (Million MT)',
       data: [1.398, 1.434, 2.262, 2.675, 14.0],

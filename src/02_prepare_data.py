@@ -141,8 +141,8 @@ data = [
         'source_id': 'S02',
         'source_url': 'https://www.pib.gov.in/PressReleasePage.aspx?PRID=2147876',
         'notes': 'PIB release 24 Jul 2025. Different Rules framework from 2016 series. '
-                 'RS Session CSV reports 1,751,236 for same FY under different methodology. '
-                 'VALUE IS LOWER than 2022-23 under old Rules — methodology break, not decline.'
+                 'RS Session CSV reports 1,751,236 for the same FY. '
+                 'The reporting change limits direct comparison with FY 2022-23.'
     },
     {
         'record_id': 'IN008',
@@ -186,8 +186,7 @@ print(df[['financial_year', 'ewaste_generated_tonnes', 'yoy_growth_pct',
           'reporting_framework', 'framework_flag']].to_string(index=False))
 
 print("\n  NOTE: YoY growth from 2022-23 to 2023-24 shows -22%.")
-print("  This is NOT a real decline — it reflects the methodology change.")
-print("  The 2022 Rules framework measures a different scope.")
+print("  The reporting framework changed. The contribution of that change is unknown.")
 
 # ============================================================================
 # 3. CREATE MODELLING DATASETS
