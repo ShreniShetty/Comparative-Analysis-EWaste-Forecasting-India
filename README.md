@@ -126,6 +126,11 @@ Comparative-Analysis-EWaste-Forecasting-India/
 
 ## Installation & How to Run
 
+For changes to data or forecasting code, regenerate the dashboard and model exports
+with `python src/run_pipeline.py`, then run `python -m unittest discover -s tests`.
+Include the affected outputs in the same pull request. GitHub Actions checks the
+published results and reruns the pipeline on pull requests and pushes to `main`.
+
 ### 1. Prerequisites
 - Python 3.10+ (Tested on Python 3.11)
 - Install required packages:
